@@ -1,0 +1,15 @@
+name: Keep Supabase Alive
+on:
+  schedule:
+    - cron: '0 12 * * 1,4'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase
+        run: |
+          curl -s "https://qrxkrqfcltdoaqsggwal.supabase.co/rest/v1/edificios?select=id&limit=1" \
+            -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyeGtycWZjbHRkb2Fxc2dnd2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIwNjU3ODAsImV4cCI6MjA5NzY0MTc4MH0.Qv8BqTHctSCvJ-eZkfiE8znU_7GNeqffij0_8u5cgr8" \
+            -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyeGtycWZjbHRkb2Fxc2dnd2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIwNjU3ODAsImV4cCI6MjA5NzY0MTc4MH0.Qv8BqTHctSCvJ-eZkfiE8znU_7GNeqffij0_8u5cgr8"
