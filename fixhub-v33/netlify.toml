@@ -1,0 +1,15 @@
+[build]
+  base    = "fixhub-v32"
+  command = "npm run build"
+  publish = "dist"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+[[plugins]]
+  package = "@netlify/plugin-functions-install-core"
+
+# Cron: ejecutar notificaciones programadas cada 5 minutos
+[functions."scheduled-notifications"]
+  schedule = "*/5 * * * *"
