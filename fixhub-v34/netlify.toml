@@ -1,5 +1,5 @@
 [build]
-  base    = "fixhub-v32"
+  base    = "fixhub-v34"
   command = "npm run build"
   publish = "dist"
 
