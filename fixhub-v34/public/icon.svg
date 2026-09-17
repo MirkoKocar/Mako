@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="80" fill="#0A1428"/>
+  <!-- Edificio -->
+  <g stroke="#E0B05E" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <!-- Paredes -->
+    <path stroke-width="16" d="M140 420 L140 200 L372 200 L372 420"/>
+    <!-- Techo -->
+    <path stroke-width="16" d="M110 200 L256 110 L402 200"/>
+    <!-- Piso -->
+    <path stroke-width="12" d="M80 420 L432 420" opacity="0.5"/>
+    <!-- Ventanas fila 1 -->
+    <rect x="168" y="228" width="70" height="70" rx="6" stroke-width="10" opacity="0.85"/>
+    <rect x="274" y="228" width="70" height="70" rx="6" stroke-width="10" opacity="0.85"/>
+    <!-- Ventanas fila 2 -->
+    <rect x="168" y="322" width="70" height="70" rx="6" stroke-width="10" opacity="0.85"/>
+    <rect x="274" y="322" width="70" height="70" rx="6" stroke-width="10" opacity="0.85"/>
+    <!-- Puerta -->
+    <path stroke-width="12" d="M220 420 L220 355 Q220 340 256 340 Q292 340 292 355 L292 420"/>
+  </g>
+  <!-- Punto decorativo arriba -->
+  <circle cx="256" cy="100" r="8" fill="#E0B05E" opacity="0.7"/>
+</svg>
