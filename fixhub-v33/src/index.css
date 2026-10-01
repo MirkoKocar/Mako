@@ -1,0 +1,325 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+
+/* ===== DARK MODE (default) ===== */
+:root {
+  --bg:            #0A1428;
+  --bg2:           #11203B;
+  --bg-card:       rgba(255,255,255,0.055);
+  --border:        rgba(255,255,255,0.14);
+  --border-strong: rgba(255,255,255,0.24);
+  --text-primary:  #F2E0C9;
+  --text-secondary:rgba(180,190,205,0.68);
+  --text-muted:    rgba(180,190,205,0.35);
+  --text-faint:    rgba(180,190,205,0.18);
+  --gold:          #E0B05E;
+  --gold-dim:      rgba(224,176,94,0.45);
+  --gold-faint:    rgba(224,176,94,0.08);
+  --nav-bg:        rgba(8,16,34,0.97);
+  --nav-border:    rgba(255,255,255,0.12);
+  --nav-icon:      rgba(255,255,255,0.28);
+  --nav-active:    #E0B05E;
+  --input-bg:      rgba(255,255,255,0.07);
+  --input-border:  rgba(255,255,255,0.20);
+  --input-color:   #F2E0C9;
+  --skeleton-a:    rgba(217,203,176,0.04);
+  --skeleton-b:    rgba(217,203,176,0.09);
+  --cat-bg:        rgba(255,255,255,0.05);
+  --cat-border:    rgba(255,255,255,0.16);
+  --cat-color:     rgba(180,190,205,0.45);
+  --red:    #f87171;
+  --yellow: #fbbf24;
+  --green:  #34d399;
+  --blue:   #60a5fa;
+}
+
+/* ===== LIGHT MODE ===== */
+/* 
+  Fondo crema. Navy (#0A1428) como acento principal en títulos, nav, bordes clave.
+  Dorado para CTAs. Cards blancas con sombra suave.
+*/
+body.light-mode {
+  --bg:              #F3EFE8;
+  --bg2:             #E8E3DA;
+  --bg-card:         #FFFFFF;
+  --border:          rgba(10,20,40,0.30);
+  --border-strong:   rgba(10,20,40,0.48);
+  --text-primary:    #0A1428;
+  --text-secondary:  #1A2A40;
+  --text-muted:      #3A4A62;
+  --text-faint:      #6B7A92;
+  --gold:            #B87A20;
+  --gold-dim:        rgba(184,122,32,0.55);
+  --gold-faint:      rgba(184,122,32,0.10);
+  --ornament-color:  #0A1428;
+  --nav-bg:          #0A1428;
+  --nav-border:      rgba(255,255,255,0.06);
+  --nav-icon:        rgba(255,255,255,0.30);
+  --nav-active:      #E0B05E;
+  --input-bg:        #FFFFFF;
+  --input-border:    rgba(10,20,40,0.38);
+  --input-color:     #0A1428;
+  --skeleton-a:      rgba(10,20,40,0.05);
+  --skeleton-b:      rgba(10,20,40,0.10);
+  --cat-bg:          #F0ECE4;
+  --cat-border:      rgba(10,20,40,0.32);
+  --cat-color:       #3A4A62;
+  --red:    #b91c1c;
+  --yellow: #92400e;
+  --green:  #065f46;
+  --blue:   #1e3a8a;
+}
+
+body.light-mode { background: var(--bg); }
+body.light-mode #root { background: var(--bg); }
+
+/* Cards en light: sombra suave en lugar de borde luminoso */
+body.light-mode .card-shadow {
+  box-shadow: 0 2px 12px rgba(10,20,40,0.07), 0 1px 3px rgba(10,20,40,0.05) !important;
+}
+
+/* Blobs casi invisibles en light */
+body.light-mode .blob-1 { background: radial-gradient(circle, rgba(10,20,40,0.03) 0%, transparent 70%); }
+body.light-mode .blob-2 { background: radial-gradient(circle, rgba(184,122,32,0.04) 0%, transparent 70%); }
+body.light-mode .blob-3,
+body.light-mode .blob-4 { background: radial-gradient(circle, rgba(10,20,40,0.02) 0%, transparent 65%); }
+
+/* Inputs en light: override global */
+body.light-mode input,
+body.light-mode textarea,
+body.light-mode select {
+  background: var(--input-bg) !important;
+  border-color: var(--input-border) !important;
+  color: var(--input-color) !important;
+}
+body.light-mode input::placeholder,
+body.light-mode textarea::placeholder { color: rgba(10,20,40,0.35) !important; }
+
+/* Chat bubbles */
+body.light-mode .chat-mine  { background: linear-gradient(135deg,#B87A20,#7A4F10) !important; color:#fff !important; }
+body.light-mode .chat-other { background:#FFFFFF !important; border:1px solid rgba(10,20,40,0.12) !important; color:#0A1428 !important; }
+body.light-mode .chat-header, body.light-mode .chat-input-bar {
+  background: rgba(243,239,232,0.98) !important;
+  border-color: rgba(10,20,40,0.10) !important;
+}
+
+/* ===== RESET ===== */
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { height:100%; }
+
+body {
+  background: var(--bg);
+  font-family: 'DM Sans', sans-serif;
+  color: var(--text-secondary);
+  -webkit-font-smoothing: antialiased;
+  transition: background 0.3s ease;
+}
+
+#root { transition: background 0.3s ease; }
+
+.font-serif { font-family: 'DM Serif Display', serif; }
+button { cursor:pointer; border:none; outline:none; font-family:inherit; background:none; }
+input, textarea, select { outline:none; font-family:inherit; }
+::-webkit-scrollbar { display:none; }
+* { scrollbar-width:none; }
+
+/* ===== SCROLL LAYOUT ===== */
+/* 
+  El contenido scrolleable ocupa todo el espacio disponible menos el nav.
+  El nav está fuera del scroll container, así nunca tapa nada.
+*/
+.scroll-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  position: relative;
+}
+
+/* ===== BLOBS ===== */
+/* Los blobs van dentro del scroll-content como absolute */
+.blob-container {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.blob { position: absolute; border-radius: 50%; animation: blobTravel 18s ease-in-out infinite; }
+
+/* Modo oscuro: fondo limpio, sin blobs animados (a pedido, para probar) */
+body:not(.light-mode) .blob-container { display: none; }
+
+.blob-1 {
+  width:380px; height:380px; top:-120px; right:-150px;
+  background: radial-gradient(circle, rgba(224,176,94,0.09) 0%, rgba(224,176,94,0.04) 40%, transparent 70%);
+}
+.blob-2 {
+  width:300px; height:300px; bottom:10%; left:-130px;
+  background: radial-gradient(circle, rgba(96,165,250,0.06) 0%, rgba(96,165,250,0.02) 40%, transparent 70%);
+  animation-delay:-6s;
+}
+.blob-3 {
+  width:240px; height:240px; top:40%; right:-80px;
+  background: radial-gradient(circle, rgba(224,176,94,0.06) 0%, transparent 65%);
+  animation-delay:-12s;
+}
+.blob-4 {
+  width:200px; height:200px; top:20%; left:10%;
+  background: radial-gradient(circle, rgba(224,176,94,0.04) 0%, transparent 65%);
+  animation-delay:-3s; animation-duration:22s;
+}
+
+@keyframes blobTravel {
+  0%   { transform:translate(0,0) scale(1);        opacity:.5; }
+  25%  { transform:translate(-30px,40px) scale(1.08); opacity:.8; }
+  50%  { transform:translate(25px,-30px) scale(0.92);  opacity:.4; }
+  75%  { transform:translate(-15px,20px) scale(1.04);  opacity:.9; }
+  100% { transform:translate(0,0) scale(1);        opacity:.5; }
+}
+
+/* ===== PAGE WRAPPER ===== */
+/* Cada página tiene padding-bottom para no quedar tapada — pero ahora es mínimo porque el nav no es fixed */
+.page {
+  min-height: 100%;
+  position: relative;
+  z-index: 1;
+  padding-bottom: 24px;
+}
+.page-enter { animation: fadeUp 0.4s cubic-bezier(.22,1,.36,1) forwards; }
+
+/* ===== NAV ===== */
+/* El nav ahora es parte del flex, no fixed */
+.bottom-nav {
+  flex-shrink: 0;
+  background: var(--nav-bg);
+  border-top: 1px solid var(--nav-border);
+  padding-top: 10px;
+  padding-bottom: max(18px, env(safe-area-inset-bottom));
+  position: relative;
+  z-index: 40;
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes pulseOrn { 0%,100%{opacity:.18} 50%{opacity:.6} }
+@keyframes fadeUp   { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+@keyframes fadeIn   { from{opacity:0} to{opacity:1} }
+@keyframes slideDown{ from{opacity:0;transform:translateY(-16px)} to{opacity:1;transform:translateY(0)} }
+@keyframes shimmer  { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+@keyframes scaleIn  { from{opacity:0;transform:scale(0.94)} to{opacity:1;transform:scale(1)} }
+@keyframes bounce   { 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-10px)} }
+@keyframes spin     { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+
+.animate-ornament { animation: pulseOrn 3.5s ease-in-out infinite; }
+.fade-up   { animation: fadeUp 0.5s cubic-bezier(.22,1,.36,1) forwards; }
+.fade-up-2 { animation: fadeUp 0.5s 0.08s cubic-bezier(.22,1,.36,1) forwards; opacity:0; }
+.fade-up-3 { animation: fadeUp 0.5s 0.16s cubic-bezier(.22,1,.36,1) forwards; opacity:0; }
+.fade-up-4 { animation: fadeUp 0.5s 0.24s cubic-bezier(.22,1,.36,1) forwards; opacity:0; }
+.fade-in   { animation: fadeIn 0.4s ease forwards; }
+.slide-down{ animation: slideDown 0.35s cubic-bezier(.22,1,.36,1) forwards; }
+.scale-in  { animation: scaleIn 0.4s cubic-bezier(.22,1,.36,1) forwards; }
+
+.skeleton {
+  background: linear-gradient(90deg, var(--skeleton-a) 25%, var(--skeleton-b) 50%, var(--skeleton-a) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+}
+
+button { transition: transform 0.15s ease, opacity 0.18s ease; }
+button:active { transform: scale(0.96); }
+
+/* ===== LIGHT MODE OVERRIDES GLOBALES ===== */
+/* 
+  Overrides para todos los colores hardcodeados en las páginas JSX.
+  El navy es el acento principal, el dorado para CTAs.
+*/
+
+/* Textos principales */
+body.light-mode .font-serif { color: var(--text-primary) !important; }
+body.light-mode h1, body.light-mode h2, body.light-mode h3 { color: var(--text-primary) !important; }
+
+/* Texto crema → navy */
+body.light-mode [style*="#F2E0C9"]    { color: var(--text-primary) !important; }
+body.light-mode [style*="#f2e0c9"]    { color: var(--text-primary) !important; }
+
+/* Texto secundario grisáceo → navy legible */
+body.light-mode [style*="rgba(180,190,205,0.68"]  { color: var(--text-secondary) !important; }
+body.light-mode [style*="rgba(180,190,205,0.5"]   { color: var(--text-muted)     !important; }
+body.light-mode [style*="rgba(180,190,205,0.4"]   { color: var(--text-muted)     !important; }
+body.light-mode [style*="rgba(180,190,205,0.3"]   { color: var(--text-faint)     !important; }
+body.light-mode [style*="rgba(180,190,205,0.2"]   { color: var(--text-faint)     !important; }
+body.light-mode [style*="rgba(180,190,205,0.1"]   { color: var(--text-faint)     !important; }
+body.light-mode [style*="rgba(242,224,201,0.8"]   { color: var(--text-primary)   !important; }
+body.light-mode [style*="rgba(242,224,201,0.6"]   { color: var(--text-secondary) !important; }
+body.light-mode [style*="rgba(242,224,201,0.4"]   { color: var(--text-muted)     !important; }
+
+/* Estrellas ornamentales animadas → navy */
+body.light-mode .animate-ornament { color: var(--ornament-color) !important; opacity: 0.5 !important; }
+
+/* Fondos de cards: rgba(255,255,255,0.0X) → blanco sólido */
+body.light-mode [style*="background: 'rgba(255,255,255,0.0"],
+body.light-mode [style*='background: "rgba(255,255,255,0.0'] { background: var(--bg-card) !important; }
+
+/* Bordes rgba(217,203,176,...) → navy suave */
+body.light-mode [style*="rgba(217,203,176"] { border-color: var(--border) !important; }
+
+/* Estrellas ornamentales: mantener dorado pero más visible */
+body.light-mode .animate-ornament { color: var(--gold) !important; opacity: 0.7 !important; }
+
+/* Ornament lines — navy en light */
+body.light-mode [style*="gold-dim"] { background: linear-gradient(to right, transparent, rgba(10,20,40,0.25)) !important; }
+
+/* Backgrounds de página */
+body.light-mode .page { background: var(--bg) !important; }
+body.light-mode .scroll-content { background: var(--bg) !important; }
+
+/* Botones de categoría / urgencia en NuevoAviso */
+body.light-mode button[style*="rgba(255,255,255,0.0"] {
+  background: var(--cat-bg) !important;
+  border-color: var(--cat-border) !important;
+  color: var(--cat-color) !important;
+}
+
+/* Stats cards con bordes de color — mantener los colores de acento pero sobre fondo blanco */
+body.light-mode [style*="borderTop: '3px solid"] {
+  background: #FFFFFF !important;
+}
+
+/* Separadores y líneas internas */
+body.light-mode [style*="rgba(217,203,176,0.07"],
+body.light-mode [style*="rgba(217,203,176,0.08"],
+body.light-mode [style*="rgba(217,203,176,0.09"] {
+  border-color: rgba(10,20,40,0.08) !important;
+}
+
+/* AccentCard border izquierdo — mantener el color de acento, solo cambiar el fondo */
+body.light-mode [style*="borderLeft"] { background: #FFFFFF !important; }
+
+/* Inputs globales ya cubiertos arriba, pero por si acaso */
+body.light-mode input[style],
+body.light-mode textarea[style] {
+  background: #FFFFFF !important;
+  color: #0A1428 !important;
+}
+
+/* Section labels */
+body.light-mode [style*="letterSpacing: '0.22em'"] { color: var(--text-muted) !important; }
+
+/* Progress bars y elementos de color vivo: mantenerlos */
+body.light-mode [style*="background: 'linear-gradient(90deg,#E0B05E"] { /* mantener */ }
+
+/* Botón Continuar y otros PrimaryBtn: siempre dorado con texto navy */
+body.light-mode [style*="color: '#0A1428'"] { color: #0A1428 !important; }
+
+/* Texto "Sin avisos" y placeholders vacíos */
+body.light-mode [style*="rgba(180,190,205,0.2"],
+body.light-mode [style*="rgba(180,190,205,0.25"],
+body.light-mode [style*="rgba(180,190,205,0.28"] { color: var(--text-faint) !important; }
+
+/* Header de secciones con texto grande */
+body.light-mode h1, body.light-mode h2, body.light-mode h3 { color: var(--text-primary) !important; }
+
+/* Fondo global del scroll area */
+body.light-mode { background: var(--bg) !important; }
