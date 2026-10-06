@@ -1,0 +1,41 @@
+[build]
+  base    = "fixhub-v36"
+  command = "npm run build"
+  publish = "dist"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+[[plugins]]
+  package = "@netlify/plugin-functions-install-core"
+
+# Cron: ejecutar notificaciones programadas cada 5 minutos
+[functions."scheduled-notifications"]
+  schedule = "*/5 * * * *"
+
+# La app es de una sola página: cualquier ruta (ej: /t/<link del proveedor>)
+# carga index.html. Los archivos que existen (terminos.html, etc.) se sirven normal.
+[[redirects]]
+  from   = "/*"
+  to     = "/index.html"
+  status = 200
+
+# Cabeceras de seguridad
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "no-referrer"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+    Permissions-Policy = "camera=(self), microphone=(), geolocation=(), payment=()"
+    # En modo "solo reportar" para no romper nada: mirá la consola del navegador
+    # y, si no aparecen bloqueos legítimos, cambiá el nombre a Content-Security-Policy.
+    Content-Security-Policy-Report-Only = "default-src 'self'; script-src 'self' https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://*.supabase.co; media-src 'self' blob: https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.googleapis.com https://*.firebaseio.com https://fcm.googleapis.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+
+# Los links de trabajo y las funciones nunca se guardan en caché
+[[headers]]
+  for = "/.netlify/functions/*"
+  [headers.values]
+    Cache-Control = "no-store"
