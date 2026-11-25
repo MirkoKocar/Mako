@@ -1,21 +1,31 @@
+Proveedor wa
+ · JS
 // WhatsApp al proveedor: reglas de envío (consentimiento, baja), registro, agrupado y recordatorios.
-const { normalizarTelefonoAR } = require('./common')
-const { enviarPlantilla } = require('./whatsapp')
+const { normalizarTelefonoAR } = require('./telefono')
+// whatsapp.js se carga recién al enviar: si ese archivo estuviera dañado en el deploy, solo falla el ENVÍO (y se le avisa al admin),
+// pero el resto de la app (vista previa, chat, acuerdos, panel) sigue andando.
+async function enviarPlantilla(args) {
+  try { return await require('./whatsapp').enviarPlantilla(args) }
+  catch (e) {
+    console.error('No se pudo cargar lib/whatsapp.js:', String(e?.message || e).split('\n')[0])
+    return { ok: false, canal: 'twilio', error: 'No se pudo cargar el módulo de WhatsApp (revisá netlify/functions/lib/whatsapp.js)' }
+  }
+}
 const P = require('./plantillas')
 const { crearEnlace, obtenerOCrearEnlace, enlaceActivo } = require('./enlaces')
-const { descifrarToken } = require('./common')
-const { avisarAdmins } = require('./common')
-
+const { descifrarToken } = require('./tokens')
+const { avisarAdmins } = require('./push')
+ 
 const INACTIVO_SEG = 60          // sin actividad en la página de más de 60 s = "no la tiene abierta"
 const AGRUPAR_MIN = 10           // máximo un WhatsApp de novedades cada 10 min por trabajo
-
+ 
 const MOTIVOS = {
   sin_telefono: 'el proveedor no tiene teléfono cargado',
   telefono_invalido: 'el teléfono del proveedor no es un celular argentino válido',
   sin_consentimiento: 'falta confirmar que el proveedor aceptó recibir avisos por WhatsApp',
   baja: 'el proveedor respondió BAJA y pidió no recibir más avisos',
 }
-
+ 
 function puedeRecibirWa(prov) {
   if (!prov?.telefono) return { ok: false, motivo: 'sin_telefono' }
   if (!normalizarTelefonoAR(prov.telefono)) return { ok: false, motivo: 'telefono_invalido' }
@@ -23,9 +33,9 @@ function puedeRecibirWa(prov) {
   if (prov.whatsapp_optout_at) return { ok: false, motivo: 'baja' }
   return { ok: true }
 }
-
+ 
 const COLS_AVISO = 'id, edificio_id, vecino_id, proveedor_id, proveedor_nombre, titulo, descripcion, categoria, urgencia, fase, autorizado_por, nota_proveedor, chat_pausado, derivado_at, aceptado_at'
-
+ 
 // Todo lo necesario para armar los textos (consultas acotadas, sin select('*'))
 async function contexto(admin, avisoId) {
   const { data: a } = await admin.from('avisos').select(COLS_AVISO).eq('id', avisoId).limit(1)
@@ -38,7 +48,7 @@ async function contexto(admin, avisoId) {
   ])
   return { aviso, edificio: e?.[0] || {}, vecino: v?.[0] || {}, prov: p?.[0] || null }
 }
-
+ 
 async function enviarAProveedor(admin, ctx, { plantilla, variables, token, enlaceId }) {
   const chk = puedeRecibirWa(ctx.prov)
   if (!chk.ok) return { sent: false, motivo: chk.motivo }
@@ -55,7 +65,7 @@ async function enviarAProveedor(admin, ctx, { plantilla, variables, token, enlac
   }
   return { sent: r.ok, error: r.ok ? null : r.error }
 }
-
+ 
 // ---- Trabajo nuevo (o reenvío del mismo link) ----
 async function enviarTrabajoNuevo(admin, avisoId, { reenviar = false, nota = null } = {}) {
   let ctx = await contexto(admin, avisoId)
@@ -74,7 +84,7 @@ async function enviarTrabajoNuevo(admin, avisoId, { reenviar = false, nota = nul
   const env = await enviarAProveedor(admin, ctx, { plantilla: 'trabajo_nuevo', variables, token: enlace.token, enlaceId: enlace.enlaceId })
   return { link: enlace.url, reutilizado: enlace.reutilizado, telefono: ctx.prov.telefono, proveedor: ctx.prov.nombre, whatsapp: env.sent, motivo: env.motivo || null, error: env.error || null }
 }
-
+ 
 // Vista previa para el admin antes de autorizar (no crea nada)
 async function previewTrabajoNuevo(admin, avisoId, proveedorId, nota) {
   const ctx = await contexto(admin, avisoId)
@@ -91,7 +101,7 @@ async function previewTrabajoNuevo(admin, avisoId, proveedorId, nota) {
   return { texto: P.renderTexto('trabajo_nuevo', variables), footer: P.FOOTER, boton: P.plantillas.trabajo_nuevo.boton,
     puede_enviar: chk.ok, motivo: chk.ok ? null : MOTIVOS[chk.motivo] }
 }
-
+ 
 // ---- Novedades (mensajes del hilo / acuerdo) con agrupado ----
 // Se llama cuando el vecino o el admin escriben (o cambia el acuerdo). Si el proveedor tiene la página abierta no hace falta nada:
 // la ve por el polling. Si no, se marca como pendiente y se intenta enviar (máx. 1 WhatsApp cada 10 min por trabajo).
@@ -108,7 +118,7 @@ async function marcarNovedad(admin, avisoId, { tipo, texto = null } = {}) {
   await admin.from('enlaces_proveedor').update(upd).eq('id', e.id)
   return flushNovedades(admin, e.id)
 }
-
+ 
 async function flushNovedades(admin, enlaceId) {
   const { data: en } = await admin.from('enlaces_proveedor')
     .select('id, aviso_id, proveedor_id, token_hash, token_cifrado, revocado, expires_at, ultimo_acceso_at, wa_pendiente, wa_mensajes_hasta, wa_acuerdo_pendiente, created_at')
@@ -119,18 +129,18 @@ async function flushNovedades(admin, enlaceId) {
   if (e.revocado || new Date(e.expires_at) < new Date()) { await limpiar(); return { enviado: false } }
   const ahora = new Date()
   if (e.ultimo_acceso_at && ahora - new Date(e.ultimo_acceso_at) < INACTIVO_SEG * 1000) { await limpiar({ wa_mensajes_hasta: ahora.toISOString() }); return { enviado: false, motivo: 'pagina_abierta' } }
-
+ 
   // máximo uno cada 10 min por trabajo: si hay uno reciente, queda pendiente y lo manda el cron
   const desdeThrottle = new Date(ahora - AGRUPAR_MIN * 60000).toISOString()
   const { data: rec } = await admin.from('notificaciones_whatsapp').select('id').eq('aviso_id', e.aviso_id)
     .in('plantilla', ['mensaje_nuevo', 'acuerdo_novedad']).gt('created_at', desdeThrottle).limit(1)
   if (rec?.length) return { enviado: false, motivo: 'agrupado' }
-
+ 
   const ctx = await contexto(admin, e.aviso_id)
   if (!ctx?.prov || ctx.aviso.proveedor_id !== e.proveedor_id) { await limpiar(); return { enviado: false } }
   const token = descifrarToken(e.token_cifrado, e.token_hash)
   if (!token) { await limpiar(); return { enviado: false, motivo: 'sin_token' } }   // link viejo sin cifrar: el admin puede reenviarlo
-
+ 
   const desde = new Date(e.wa_mensajes_hasta || e.created_at).toISOString()
   const { data: msgs } = await admin.from('mensajes').select('contenido, imagen_url, remitente_rol, created_at')
     .eq('aviso_id', e.aviso_id).in('remitente_rol', ['vecino', 'admin']).eq('es_nota_interna', false)
@@ -138,7 +148,7 @@ async function flushNovedades(admin, enlaceId) {
     .order('created_at', { ascending: true }).limit(50)
   const lista = msgs || []
   const hayAcuerdo = !!e.wa_acuerdo_pendiente
-
+ 
   let plantilla, variables
   if (lista.length) {
     const quienes = []
@@ -154,13 +164,13 @@ async function flushNovedades(admin, enlaceId) {
     plantilla = 'acuerdo_novedad'
     variables = P.varsAcuerdoNovedad({ proveedorNombre: ctx.prov.nombre, titulo: ctx.aviso.titulo, novedad: e.wa_acuerdo_pendiente })
   } else { await limpiar(); return { enviado: false } }
-
+ 
   const r = await enviarAProveedor(admin, ctx, { plantilla, variables, token, enlaceId: e.id })
   // Si falla no reintentamos en loop: el admin ya fue avisado y puede enviarlo a mano
   await limpiar({ wa_mensajes_hasta: ahora.toISOString() })
   return { enviado: r.sent, plantilla }
 }
-
+ 
 // ---- Recordatorios (los dispara el cron) ----
 async function enviarRecordatorio(admin, avisoId, plantilla) {
   const ctx = await contexto(admin, avisoId)
@@ -170,5 +180,5 @@ async function enviarRecordatorio(admin, avisoId, plantilla) {
   const variables = P.varsRecordatorio({ proveedorNombre: ctx.prov.nombre, titulo: ctx.aviso.titulo })
   return enviarAProveedor(admin, ctx, { plantilla, variables, token: enlace.token, enlaceId: enlace.enlaceId })
 }
-
+ 
 module.exports = { INACTIVO_SEG, AGRUPAR_MIN, MOTIVOS, puedeRecibirWa, contexto, enviarAProveedor, enviarTrabajoNuevo, previewTrabajoNuevo, marcarNovedad, flushNovedades, enviarRecordatorio }
