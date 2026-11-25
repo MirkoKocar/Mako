@@ -1,5 +1,3 @@
-Whatsapp
- · JS
 // ============================================================================
 // WhatsApp — interfaz única:  enviarPlantilla({ numero, plantilla, variables, sufijoBoton })
 // Driver según WHATSAPP_PROVIDER:  'twilio' (por defecto)  |  'meta' (Cloud API, el de antes)
@@ -11,22 +9,22 @@ Whatsapp
 const { plantillas, FOOTER, renderTexto } = require('./plantillas')
 const { aE164 } = require('./telefono')
 const { baseUrl } = require('./common')
- 
+
 const proveedorActivo = () => (process.env.WHATSAPP_PROVIDER || 'twilio').toLowerCase() === 'meta' ? 'meta' : 'twilio'
 const urlDelLink = (sufijo) => `${baseUrl()}/t/${sufijo}`
 const urlEstado = () => `${baseUrl()}/.netlify/functions/whatsapp-estado`
- 
+
 function errorCorto(e) {
   const code = e?.code ? `[${e.code}] ` : ''
   return (code + String(e?.message || e || 'error desconocido')).replace(/\s+/g, ' ').slice(0, 280)
 }
- 
+
 // Lee una variable de entorno sin espacios ni saltos de línea sobrantes (pasa seguido al pegar valores en Netlify)
 const env = (k) => String(process.env[k] ?? '').trim()
- 
+
 // Sandbox = texto libre. Acepta "true", "True", " TRUE " (cualquier mayúscula y con espacios).
 const esSandbox = () => process.env.TWILIO_SANDBOX?.trim().toLowerCase() === 'true'
- 
+
 async function enviarTwilio({ to, plantilla, variables, sufijoBoton }) {
   const sid = env('TWILIO_ACCOUNT_SID'), auth = env('TWILIO_AUTH_TOKEN')
   const from = env('TWILIO_WHATSAPP_FROM'), servicio = env('TWILIO_MESSAGING_SERVICE_SID')
@@ -34,11 +32,11 @@ async function enviarTwilio({ to, plantilla, variables, sufijoBoton }) {
   if (!sid || !auth || (!from && !servicio)) return falla('Twilio sin configurar (faltan variables en Netlify)')
   const cfg = plantillas[plantilla]
   if (!cfg) return falla('Plantilla desconocida')
- 
+
   const datos = { to: `whatsapp:${to}`, statusCallback: urlEstado() }
   if (servicio) datos.messagingServiceSid = servicio
   else datos.from = from.startsWith('whatsapp:') ? from : `whatsapp:${from}`
- 
+
   if (esSandbox()) {
     // SANDBOX: solo texto libre (body). NUNCA contentSid ni contentVariables.
     // (El destinatario tiene que haberse unido al sandbox desde su WhatsApp.)
@@ -55,13 +53,13 @@ async function enviarTwilio({ to, plantilla, variables, sufijoBoton }) {
     datos.contentSid = contentSid
     datos.contentVariables = JSON.stringify(cv)
   }
- 
+
   // Última red: o va solo texto (sandbox) o van plantilla + variables juntas. Nunca una mitad sola.
   const usaPlantilla = datos.contentSid !== undefined, tieneVars = datos.contentVariables !== undefined
   if (usaPlantilla !== tieneVars || (usaPlantilla && datos.body !== undefined) || (!usaPlantilla && !datos.body)) {
     return falla('Envío de WhatsApp mal armado (contentSid / contentVariables / body)')
   }
- 
+
   try {
     const twilio = require('twilio')
     const msg = await twilio(sid, auth).messages.create(datos)
@@ -70,7 +68,7 @@ async function enviarTwilio({ to, plantilla, variables, sufijoBoton }) {
     return { ok: false, canal: 'twilio', error: errorCorto(e) }
   }
 }
- 
+
 async function enviarMeta({ to, plantilla, variables, sufijoBoton }) {
   const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID, token = process.env.WHATSAPP_ACCESS_TOKEN
   if (!phoneId || !token) return { ok: false, canal: 'meta', error: 'Meta WhatsApp sin configurar (faltan variables en Netlify)' }
@@ -90,7 +88,7 @@ async function enviarMeta({ to, plantilla, variables, sufijoBoton }) {
     return { ok: true, canal: 'meta', sid: data?.messages?.[0]?.id || null }
   } catch (e) { return { ok: false, canal: 'meta', error: errorCorto(e) } }
 }
- 
+
 // numero: cualquier formato argentino; se normaliza a E.164 (+549...)
 async function enviarPlantilla({ numero, plantilla, variables = [], sufijoBoton = null }) {
   const to = aE164(numero)
@@ -98,5 +96,5 @@ async function enviarPlantilla({ numero, plantilla, variables = [], sufijoBoton 
   const args = { to, plantilla, variables, sufijoBoton }
   return proveedorActivo() === 'meta' ? enviarMeta(args) : enviarTwilio(args)
 }
- 
+
 module.exports = { enviarPlantilla, proveedorActivo, esSandbox }
