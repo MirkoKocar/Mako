@@ -8,7 +8,7 @@ const { json, getUser, userClient, adminClient } = require('./lib/common')
 const A = require('./lib/acuerdos')
 const { FASES_ACTIVAS, revocarEnlaces, registrarEvento } = require('./lib/enlaces')
 const { previewTrabajoNuevo, MOTIVOS, puedeRecibirWa } = require('./lib/proveedor-wa')
-const { aE164 } = require('./lib/common')
+const { aE164 } = require('./lib/telefono')
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const ACCIONES = ['estado', 'acuerdo_proponer', 'acuerdo_aceptar', 'acuerdo_decidir', 'estado_admin', 'preview_trabajo', 'revocar_link', 'historial_acuerdos']
@@ -22,9 +22,9 @@ exports.handler = async (event) => {
   const accion = String(body.accion || '')
   if (!ACCIONES.includes(accion)) return json(400, { error: 'Acción inválida' })
 
-  const me = userClient(ses.jwt)
-  const admin = adminClient()
+  let me, admin
   try {
+    me = userClient(ses.jwt); admin = adminClient()
     const { data: perfil } = await me.from('perfiles').select('rol, persona_id, edificio_id').eq('auth_user_id', ses.user.id).limit(1)
     const p = perfil?.[0]
     if (!p) return json(403, { error: 'Sin perfil' })
@@ -133,3 +133,4 @@ exports.handler = async (event) => {
     return json(500, { error: 'No se pudo completar. Probá de nuevo.' })
   }
 }
+
