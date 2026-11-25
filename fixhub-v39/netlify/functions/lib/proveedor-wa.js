@@ -1,5 +1,4 @@
-Proveedor wa
- · JS
+
 // WhatsApp al proveedor: reglas de envío (consentimiento, baja), registro, agrupado y recordatorios.
 const { normalizarTelefonoAR } = require('./telefono')
 // whatsapp.js se carga recién al enviar: si ese archivo estuviera dañado en el deploy, solo falla el ENVÍO (y se le avisa al admin),
