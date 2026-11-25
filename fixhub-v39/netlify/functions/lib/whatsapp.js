@@ -13,6 +13,13 @@ const proveedorActivo = () => (process.env.WHATSAPP_PROVIDER || 'twilio').toLowe
 const urlDelLink = (sufijo) => `${baseUrl()}/t/${sufijo}`
 const urlEstado = () => `${baseUrl()}/.netlify/functions/whatsapp-estado`
 
+function aE164WhatsApp(numero) {
+  const base = aE164(numero)
+  if (!base) return null
+  if (/^\+54(?!9)\d{10}$/.test(base)) return `+549${base.slice(3)}`
+  return base
+}
+
 function errorCorto(e) {
   const code = e?.code ? `[${e.code}] ` : ''
   return (code + String(e?.message || e || 'error desconocido')).replace(/\s+/g, ' ').slice(0, 280)
@@ -30,12 +37,16 @@ async function enviarTwilio({ to, plantilla, variables, sufijoBoton }) {
   else datos.from = from.startsWith('whatsapp:') ? from : `whatsapp:${from}`
 
   if (process.env.TWILIO_SANDBOX === 'true') {
-    // Sandbox: texto libre (el destinatario tiene que haberse unido al sandbox desde su WhatsApp)
-    datos.body = `${renderTexto(plantilla, variables)}${sufijoBoton ? `\n\n${cfg.boton}: ${urlDelLink(sufijoBoton)}` : ''}\n\n${FOOTER}`
+    const textoLibre = `${renderTexto(plantilla, variables)}${sufijoBoton ? `\n\n${cfg.boton}: ${urlDelLink(sufijoBoton)}` : ''}\n\n${FOOTER}`
+    if (process.env.TWILIO_CONTENT_SID) {
+      datos.contentSid = process.env.TWILIO_CONTENT_SID
+      datos.contentVariables = JSON.stringify({ '1': textoLibre.replace(/\s*\n+\s*/g, ' · ').slice(0, 900) })
+    } else {
+      datos.body = textoLibre
+    }
   } else {
     const contentSid = process.env[cfg.env]
     if (!contentSid) return { ok: false, canal: 'twilio', error: `Falta ${cfg.env} (SID de la plantilla aprobada)` }
-    // Variables del cuerpo = 1..N; la última (N+1) es el final de la URL del botón (https://<dominio>/t/{{N+1}})
     const cv = {}
     variables.forEach((v, i) => { cv[String(i + 1)] = String(v) })
     if (sufijoBoton) cv[String(variables.length + 1)] = String(sufijoBoton)
@@ -72,9 +83,8 @@ async function enviarMeta({ to, plantilla, variables, sufijoBoton }) {
   } catch (e) { return { ok: false, canal: 'meta', error: errorCorto(e) } }
 }
 
-// numero: cualquier formato argentino; se normaliza a E.164 (+549...)
 async function enviarPlantilla({ numero, plantilla, variables = [], sufijoBoton = null }) {
-  const to = aE164(numero)
+  const to = aE164WhatsApp(numero)
   if (!to) return { ok: false, canal: proveedorActivo(), error: 'Teléfono inválido' }
   const args = { to, plantilla, variables, sufijoBoton }
   return proveedorActivo() === 'meta' ? enviarMeta(args) : enviarTwilio(args)
