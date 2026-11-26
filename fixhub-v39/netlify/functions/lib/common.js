@@ -397,9 +397,10 @@ async function enviarTwilio({ to, plantilla, variables, sufijoBoton }) {
   if (!cfg) return falla('Plantilla desconocida')
 
 const datos = { to: `whatsapp:${to}`, statusCallback: urlEstado() }
-const sandbox = esSandbox()
-if (servicio && !(sandbox && from)) datos.messagingServiceSid = servicio
-else datos.from = from.startsWith('whatsapp:') ? from : `whatsapp:${from}`
+  const sandbox = esSandbox()
+  if (servicio && !(sandbox && from)) datos.messagingServiceSid = servicio
+  if (!datos.messagingServiceSid && from) datos.from = from.startsWith('whatsapp:') ? from : `whatsapp:${from}`
+  if (!datos.messagingServiceSid && !datos.from) return falla('Falta el remitente: cargá TWILIO_WHATSAPP_FROM (ej: whatsapp:+17372212163) en Netlify')
 
 if (sandbox) {
     datos.body = `${renderTexto(plantilla, variables)}${sufijoBoton ? `\n\n${cfg.boton}: ${urlDelLink(sufijoBoton)}` : ''}\n\n${FOOTER}`
