@@ -396,11 +396,12 @@ async function enviarTwilio({ to, plantilla, variables, sufijoBoton }) {
   const cfg = plantillas[plantilla]
   if (!cfg) return falla('Plantilla desconocida')
 
-  const datos = { to: `whatsapp:${to}`, statusCallback: urlEstado() }
-  if (servicio) datos.messagingServiceSid = servicio
-  else datos.from = from.startsWith('whatsapp:') ? from : `whatsapp:${from}`
+const datos = { to: `whatsapp:${to}`, statusCallback: urlEstado() }
+const sandbox = esSandbox()
+if (servicio && !(sandbox && from)) datos.messagingServiceSid = servicio
+else datos.from = from.startsWith('whatsapp:') ? from : `whatsapp:${from}`
 
-  if (esSandbox()) {
+if (sandbox) {
     datos.body = `${renderTexto(plantilla, variables)}${sufijoBoton ? `\n\n${cfg.boton}: ${urlDelLink(sufijoBoton)}` : ''}\n\n${FOOTER}`
   } else {
     const contentSid = env(cfg.env)
@@ -423,7 +424,8 @@ async function enviarTwilio({ to, plantilla, variables, sufijoBoton }) {
     const msg = await twilio(sid, auth).messages.create(datos)
     return { ok: true, canal: 'twilio', sid: msg.sid }
   } catch (e) {
-    return { ok: false, canal: 'twilio', error: errorCorto(e) }
+    const modo = `v39d modo=${sandbox ? 'sandbox' : 'plantilla'}, campos=${Object.keys(datos).join('/')}`
+    return { ok: false, canal: 'twilio', error: `${errorCorto(e).slice(0, 170)} (${modo})` }
   }
 }
 
