@@ -4,11 +4,8 @@
 // para usuarios, así que TODO pasa por acá: primero se verifica con la sesión de la persona (RLS) que
 // puede ver el reclamo, y recién después se usa el service role con consultas acotadas.
 // ============================================================================
-const { json, getUser, userClient, adminClient } = require('./lib/common')
-const A = require('./lib/acuerdos')
-const { FASES_ACTIVAS, revocarEnlaces, registrarEvento } = require('./lib/enlaces')
-const { previewTrabajoNuevo, MOTIVOS, puedeRecibirWa } = require('./lib/proveedor-wa')
-const { aE164 } = require('./lib/telefono')
+const A = require('./lib/common')
+const { json, getUser, userClient, adminClient, FASES_ACTIVAS, revocarEnlaces, registrarEvento, previewTrabajoNuevo, MOTIVOS, puedeRecibirWa, aE164 } = A
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const ACCIONES = ['estado', 'acuerdo_proponer', 'acuerdo_aceptar', 'acuerdo_decidir', 'estado_admin', 'preview_trabajo', 'revocar_link', 'historial_acuerdos']
