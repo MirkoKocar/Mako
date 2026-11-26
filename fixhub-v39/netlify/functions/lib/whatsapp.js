@@ -2,12 +2,11 @@
 // WhatsApp — interfaz única:  enviarPlantilla({ numero, plantilla, variables, sufijoBoton })
 // Driver según WHATSAPP_PROVIDER:  'twilio' (por defecto)  |  'meta' (Cloud API, el de antes)
 //  - Twilio en producción: SOLO plantillas aprobadas (Content Templates con botón de URL).
-//  - Twilio con TWILIO_SANDBOX=true (en cualquier mayúscula): SOLO texto libre (body), sin plantillas.
-//  - Twilio en producción: SIEMPRE contentSid + contentVariables juntos (y nunca body).
+//  - Twilio con TWILIO_SANDBOX=true: texto libre, para probar el flujo sin plantillas aprobadas.
 // Nunca se loguean las variables, el link ni el token.
 // ============================================================================
 const { plantillas, FOOTER, renderTexto } = require('./plantillas')
-const { aE164 } = require('./telefono')
+const { aE164 } = require('./common')
 const { baseUrl } = require('./common')
 
 const proveedorActivo = () => (process.env.WHATSAPP_PROVIDER || 'twilio').toLowerCase() === 'meta' ? 'meta' : 'twilio'
@@ -19,33 +18,34 @@ function errorCorto(e) {
   return (code + String(e?.message || e || 'error desconocido')).replace(/\s+/g, ' ').slice(0, 280)
 }
 
-// Lee una variable de entorno sin espacios ni saltos de línea sobrantes (pasa seguido al pegar valores en Netlify)
-const env = (k) => String(process.env[k] ?? '').trim()
+// Versión de este archivo. Aparece en los errores guardados: si NO ves esta marca en
+// notificaciones_whatsapp.error, el sitio todavía está corriendo código viejo (falta publicar de nuevo).
+const WA_BUILD = 'wa-b1'
 
-// Sandbox = texto libre. Acepta "true", "True", " TRUE " (cualquier mayúscula y con espacios).
-const esSandbox = () => process.env.TWILIO_SANDBOX?.trim().toLowerCase() === 'true'
+// Las variables de Netlify a veces quedan con espacios, saltos de línea o comillas al pegarlas.
+const limpiar = (v) => String(v ?? '').trim().replace(/^["']+|["']+$/g, '').trim()
+const esSandbox = () => limpiar(process.env.TWILIO_SANDBOX).toLowerCase() === 'true'
+const SID_PLANTILLA = /^HX[0-9a-fA-F]{32}$/
 
 async function enviarTwilio({ to, plantilla, variables, sufijoBoton }) {
-  const sid = env('TWILIO_ACCOUNT_SID'), auth = env('TWILIO_AUTH_TOKEN')
-  const from = env('TWILIO_WHATSAPP_FROM'), servicio = env('TWILIO_MESSAGING_SERVICE_SID')
-  const falla = (error) => ({ ok: false, canal: 'twilio', error })
-  if (!sid || !auth || (!from && !servicio)) return falla('Twilio sin configurar (faltan variables en Netlify)')
+  const sid = limpiar(process.env.TWILIO_ACCOUNT_SID), auth = limpiar(process.env.TWILIO_AUTH_TOKEN)
+  const from = limpiar(process.env.TWILIO_WHATSAPP_FROM), servicio = limpiar(process.env.TWILIO_MESSAGING_SERVICE_SID)
+  if (!sid || !auth || (!from && !servicio)) return { ok: false, canal: 'twilio', error: 'Twilio sin configurar (faltan variables en Netlify)' }
   const cfg = plantillas[plantilla]
-  if (!cfg) return falla('Plantilla desconocida')
+  if (!cfg) return { ok: false, canal: 'twilio', error: 'Plantilla desconocida' }
 
   const datos = { to: `whatsapp:${to}`, statusCallback: urlEstado() }
   if (servicio) datos.messagingServiceSid = servicio
   else datos.from = from.startsWith('whatsapp:') ? from : `whatsapp:${from}`
 
-  if (esSandbox()) {
-    // SANDBOX: solo texto libre (body). NUNCA contentSid ni contentVariables.
-    // (El destinatario tiene que haberse unido al sandbox desde su WhatsApp.)
+  const sandbox = esSandbox()
+  if (sandbox) {
+    // Sandbox: SOLO texto libre. Nunca contentSid ni contentVariables.
     datos.body = `${renderTexto(plantilla, variables)}${sufijoBoton ? `\n\n${cfg.boton}: ${urlDelLink(sufijoBoton)}` : ''}\n\n${FOOTER}`
   } else {
-    // PRODUCCIÓN: solo plantilla aprobada. contentSid y contentVariables siempre juntos, y NUNCA body.
-    const contentSid = env(cfg.env)
-    if (!contentSid) return falla(`Falta el SID de la plantilla ${plantilla}: cargá ${cfg.env} en Netlify (o poné TWILIO_SANDBOX=true para probar)`)
-    if (!/^HX/i.test(contentSid)) return falla(`El SID de la plantilla ${plantilla} (${cfg.env}) tiene que empezar con HX`)
+    const contentSid = limpiar(process.env[cfg.env])
+    if (!contentSid) return { ok: false, canal: 'twilio', error: `Falta ${cfg.env} (SID de la plantilla aprobada)` }
+    if (!SID_PLANTILLA.test(contentSid)) return { ok: false, canal: 'twilio', error: `${cfg.env} no parece un SID de plantilla (tiene que empezar con HX y tener 34 caracteres; tiene ${contentSid.length})` }
     // Variables del cuerpo = 1..N; la última (N+1) es el final de la URL del botón (https://<dominio>/t/{{N+1}})
     const cv = {}
     variables.forEach((v, i) => { cv[String(i + 1)] = String(v) })
@@ -54,18 +54,20 @@ async function enviarTwilio({ to, plantilla, variables, sufijoBoton }) {
     datos.contentVariables = JSON.stringify(cv)
   }
 
-  // Última red: o va solo texto (sandbox) o van plantilla + variables juntas. Nunca una mitad sola.
-  const usaPlantilla = datos.contentSid !== undefined, tieneVars = datos.contentVariables !== undefined
-  if (usaPlantilla !== tieneVars || (usaPlantilla && datos.body !== undefined) || (!usaPlantilla && !datos.body)) {
-    return falla('Envío de WhatsApp mal armado (contentSid / contentVariables / body)')
-  }
+  // Control final: jamás mandar variables sin plantilla (error 21654 de Twilio).
+  if (datos.contentVariables && !datos.contentSid) delete datos.contentVariables
+
+  // Resumen para diagnóstico: NO incluye claves, teléfonos ni links.
+  const diag = `${WA_BUILD} modo=${sandbox ? 'sandbox' : 'plantilla'} SANDBOX=${JSON.stringify(process.env.TWILIO_SANDBOX ?? null)} envia=${Object.keys(datos).filter(k => k !== 'statusCallback').join(',')}`
 
   try {
     const twilio = require('twilio')
     const msg = await twilio(sid, auth).messages.create(datos)
     return { ok: true, canal: 'twilio', sid: msg.sid }
   } catch (e) {
-    return { ok: false, canal: 'twilio', error: errorCorto(e) }
+    const code = e?.code ? `[${e.code}] ` : ''
+    const texto = String(e?.message || e || 'error desconocido').replace(/\s+/g, ' ').slice(0, 90)
+    return { ok: false, canal: 'twilio', error: `${code}${texto} | ${diag}`.slice(0, 400) }
   }
 }
 
@@ -97,4 +99,4 @@ async function enviarPlantilla({ numero, plantilla, variables = [], sufijoBoton 
   return proveedorActivo() === 'meta' ? enviarMeta(args) : enviarTwilio(args)
 }
 
-module.exports = { enviarPlantilla, proveedorActivo, esSandbox }
+module.exports = { enviarPlantilla, proveedorActivo }
