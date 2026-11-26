@@ -7,6 +7,8 @@
 //   https://TU-SITIO/.netlify/functions/probar-twilio?clave=TU_CLAVE&paso=0   -> revisa la configuración
 //   https://TU-SITIO/.netlify/functions/probar-twilio?clave=TU_CLAVE&paso=1   -> manda un texto DIRECTO por Twilio
 //   https://TU-SITIO/.netlify/functions/probar-twilio?clave=TU_CLAVE&paso=2   -> manda por el MISMO código que usa la app
+//   https://TU-SITIO/.netlify/functions/probar-twilio?clave=TU_CLAVE&paso=3   -> manda una PLANTILLA PRE-APROBADA del sandbox
+//        (no depende de la ventana de 24 h; opcional: &sid=HX... para probar otra plantilla pre-aprobada)
 //
 // Variables de Netlify que necesita (además de las de Twilio que ya tenés):
 //   PRUEBA_TWILIO_CLAVE  = una palabra cualquiera, larga (es la "contraseña" de esta prueba)
@@ -105,5 +107,20 @@ exports.handler = async (event) => {
     }
   }
 
-  return respuesta({ problema: 'Paso desconocido. Usá paso=0, 1 o 2.' })
+  // ---- Paso 3: plantilla PRE-APROBADA del sandbox (Appointment Reminder). No depende de la ventana de 24 h.
+  if (paso === '3') {
+    const sidPlantilla = /^HX[0-9a-fA-F]{32}$/.test(String(q.sid || '')) ? String(q.sid) : 'HXb5b62575e6e4ff6129ad7c8efe1f983e'
+    const datos = { to: `whatsapp:${destino}`, contentSid: sidPlantilla, contentVariables: JSON.stringify({ 1: '26 de noviembre', 2: '20:00' }) }
+    if (servicio) datos.messagingServiceSid = servicio; else datos.from = from
+    try {
+      const msg = await require('twilio')(sid, auth).messages.create(datos)
+      return respuesta({ paso: 3, ok: true, estado: msg.status, mensaje_sid: msg.sid, plantilla: sidPlantilla, envio_con: Object.keys(datos),
+        lectura: 'Twilio ACEPTÓ la plantilla pre-aprobada. Si te llega a WhatsApp, tu número, tus claves y el destino están bien: lo único que falla es el texto libre (ventana de 24 h).' })
+    } catch (e) {
+      return respuesta({ paso: 3, ok: false, codigo_twilio: e.code ?? null, mensaje: String(e.message || e), mas_info: e.moreInfo ?? null, plantilla: sidPlantilla, envio_con: Object.keys(datos),
+        lectura: 'Twilio RECHAZÓ hasta la plantilla pre-aprobada. Entonces el problema es del remitente (FROM), del destino o de la cuenta, no de la ventana de 24 h.' })
+    }
+  }
+
+  return respuesta({ problema: 'Paso desconocido. Usá paso=0, 1, 2 o 3.' })
 }
