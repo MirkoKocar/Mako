@@ -1,6 +1,4 @@
-const { createClient } = require('@supabase/supabase-js')
-const { avisar, avisarAdmins } = require('./lib/common')
-const { enviarRecordatorio, flushNovedades } = require('./lib/proveedor-wa')
+const { avisar, avisarAdmins, enviarRecordatorio, flushNovedades } = require('./lib/common')
 
 // Antes la URL y la key de Supabase estaban escritas acá adentro. Ahora
 // salen de variables de entorno de Netlify (ver SETUP_SEGURIDAD.md).
