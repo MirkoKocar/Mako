@@ -5,10 +5,7 @@
 //  · ALTA         -> se reactiva.
 // Valida X-Twilio-Signature con la librería de Twilio.
 // ============================================================================
-const { adminClient } = require('./lib/common')
-const { leerParametros, firmaValida } = require('./lib/common')
-const { avisarAdmins } = require('./lib/common')
-const { normalizarTelefonoAR } = require('./lib/common')
+const { adminClient, leerParametros, firmaValida, avisarAdmins, normalizarTelefonoAR } = require('./lib/common')
 
 const xml = (texto) => ({
   statusCode: 200, headers: { 'Content-Type': 'text/xml; charset=utf-8', 'Cache-Control': 'no-store' },
