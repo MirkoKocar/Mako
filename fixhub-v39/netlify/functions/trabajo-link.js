@@ -9,15 +9,8 @@
 //  - Service role solo con consultas acotadas a ESTE reclamo y con lista blanca de columnas (nunca select('*')).
 //  - El proveedor nunca recibe teléfono ni apellido del vecino, ni ranking, ni otros reclamos, ni notas internas.
 // ============================================================================
-const { adminClient } = require('./lib/common')
-const { hashToken, tokenValido, hashIp } = require('./lib/common')
-const { FASES_ACTIVAS, MENSAJE_INACTIVO, registrarEvento, revocarEnlaces } = require('./lib/enlaces')
-const { contieneContacto, MENSAJE_BLOQUEO } = require('./lib/common')
-const { BUCKET, MAX_MB, MIMES_PROVEEDOR, MAX_SUBIDAS_POR_LINK, limpiarNombre, prefijoDe, rutaPermitida, validarAdjuntosProveedor, firmar } = require('./lib/adjuntos')
-const A = require('./lib/acuerdos')
-const E = require('./lib/eventos')
-const { avisarAdmins } = require('./lib/common')
-const { sinContacto } = require('./lib/plantillas')
+const A = require('./lib/common'), E = A
+const { adminClient, hashToken, tokenValido, hashIp, FASES_ACTIVAS, MENSAJE_INACTIVO, registrarEvento, revocarEnlaces, contieneContacto, MENSAJE_BLOQUEO, BUCKET, MAX_MB, MIMES_PROVEEDOR, MAX_SUBIDAS_POR_LINK, limpiarNombre, prefijoDe, rutaPermitida, validarAdjuntosProveedor, firmar, avisarAdmins, sinContacto } = A
 
 const ACCIONES = ['ver', 'aceptar', 'pedir_presupuesto', 'enviar_presupuesto', 'no_puede', 'enviar_mensaje', 'pedir_url_subida', 'proponer_acuerdo', 'aceptar_acuerdo', 'finalizar']
 
