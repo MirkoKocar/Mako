@@ -6,10 +6,8 @@
 // texto. Así nadie puede usar esto para mandar mensajes truchos a otras
 // personas ni para leer tokens o teléfonos ajenos.
 // ============================================================================
-const { json, getUser, userClient, adminClient } = require('./lib/common')
-const { avisar, tokensDe } = require('./lib/common')
-const { marcarNovedad } = require('./lib/proveedor-wa')
-const E = require('./lib/eventos')
+const E = require('./lib/common')
+const { json, getUser, userClient, adminClient, avisar, tokensDe, marcarNovedad } = E
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
