@@ -4,9 +4,7 @@
 // Valida X-Twilio-Signature con la librería de Twilio. Guarda el estado en notificaciones_whatsapp y,
 // si falla, le avisa al administrador para que lo mande a mano (wa.me).
 // ============================================================================
-const { adminClient } = require('./lib/common')
-const { leerParametros, firmaValida } = require('./lib/common')
-const { avisarAdmins } = require('./lib/common')
+const { adminClient, leerParametros, firmaValida, avisarAdmins } = require('./lib/common')
 
 const MAPA = { queued: 'enviado', accepted: 'enviado', scheduled: 'enviado', sending: 'enviado', sent: 'enviado', delivered: 'entregado', read: 'leido', failed: 'fallido', undelivered: 'fallido' }
 const RANGO = { enviado: 1, entregado: 2, leido: 3, fallido: 0 }
