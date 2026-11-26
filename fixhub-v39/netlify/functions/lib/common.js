@@ -106,9 +106,10 @@ async function sendWhatsapp(numero, link) {
 
 const baseExports = { json, adminClient, userClient, getJwt, getUser, sha256, nuevoToken, baseUrl, sendPushTokens, sendWhatsapp }
 const lib = {}
+const cargarTwilio = () => require('twilio')   // require "visible": así Netlify incluye el paquete twilio en la función
 function def(nombre, fn) {
   const module = { exports: {} }
-  fn(module, (p) => p === './common' ? baseExports : (p.startsWith('./') ? lib[p.slice(2)] : require(p)))
+  fn(module, (p) => p === './common' ? baseExports : p === 'twilio' ? cargarTwilio() : (p.startsWith('./') ? lib[p.slice(2)] : require(p)))
   lib[nombre] = module.exports
 }
 
